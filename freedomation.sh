@@ -17,9 +17,9 @@ installing_comp() {
 }
 
 installing_docker_dc_comp() {
-   read -rsn1 -p "Installing Docker and Docker-Compose for running services. Press any key to continue or Esc to abort procedure..." key # Prompt user to installing docker
+   read -rsn1 -p "Now installing Docker and Docker-Compose for running services. Press any key to continue or Esc to abort procedure..." key # Prompt user to installing docker
    if [[ $key == $'\x1b' ]]; then
-      echo -e "You chose to quitting this script and canceling procedure now.\nFor continuing to run x-ui on server we need permission to install Docker and its components to avoid interupting services.\nRe-run this bash script whenever you ready to install Docker on this machine!"
+      echo -e "\nYou chose to quitting this script and canceling procedure now.\nFor continuing to run x-ui on server we need permission to install Docker and its components to avoid interupting services.\nRe-run this bash script whenever you ready to install Docker on this machine!"
       sleep 10
       exit 0
    else
