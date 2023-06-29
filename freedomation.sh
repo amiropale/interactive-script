@@ -23,6 +23,7 @@ installing_docker_dc_comp() {
       sleep 10
       exit 0
    else
+      echo "Starting to install docker-setup.sh, please wait..."
       sleep 5
       sudo wget --quiet get.docker.com -O docker-setup.sh && sh docker-setup.sh
       sleep 3
