@@ -17,11 +17,11 @@ installing_comp() {
 }
 
 installing_docker_dc_comp() {
-   read -rsn1 -p "Now installing Docker and Docker-Compose for running services. Press any key to continue or Esc to abort procedure..." key # Prompt user to installing docker
+   read -rsn1 -p "Now installing Docker and Docker-Compose for running services. Press any key to continue otherwise if you have had installed Docker and Docker-Compose press Esc to ignore this section..." key
    if [[ $key == $'\x1b' ]]; then
-      echo -e "\nYou chose to quitting this script and canceling procedure now.\nFor continuing to run x-ui on server we need permission to install Docker and its components to avoid interupting services.\nRe-run this bash script whenever you ready to install Docker on this machine!"
-      sleep 10
-      exit 0
+      echo -e "\nYou chose to ignoring this section and canceled the procedure of docker setup now.\nNow please wait for SSL gathering section to be load!"
+      sleep 5
+      acme_ssl
    else
       echo -e "\nStarting to install docker-setup.sh, please wait..."
       sleep 5
@@ -36,6 +36,29 @@ installing_docker_dc_comp() {
       echo "Docker-Compose has been installed and configured successfully."
       sleep 4
    fi
+}
+
+acme_ssl() {
+   echo "Getting SSL license with acme.sh from letsencrypt corp..."
+   sleep 2
+   read -p "Please enter your Email address to set acme.sh configuration: " email
+   sleep 1
+   sudo curl https://get.acme.sh | sh -s email="$email"
+   sudo source  ~/.bashrc
+   echo "Setting config..."
+   sleep 2
+   sudo acme.sh --set-default-ca --server letsencrypt
+   sudo acme.sh --register-account -m "$email"
+   sudo acme.sh --upgrade --auto-upgrade
+   sleep 1
+   echo -e "SSL certificate has been added to server by acme.sh script.\n"
+   sleep 1
+   echo -e "System needs to restart now. After 10 sec your PC shuts down and reboot.\nYou can run next script to install x-ui panel."
+   echo -e "\nSleep 10s"
+   sleep 10
+   echo -e "\nRebooting machine..."
+   sleep 1
+   sudo shutdown -r now
 }
 
 MIN_PORT=49152
@@ -71,6 +94,7 @@ if grep -q "$OLD_PORT" /etc/ssh/sshd_config; then  # Check if sshd_config file h
                updating_comp
                installing_comp
                installing_docker_dc_comp
+               acme_ssl
                break
             else 
                echo "Invalid port number. Please try again with a valid port within the range."
@@ -83,6 +107,7 @@ if grep -q "$OLD_PORT" /etc/ssh/sshd_config; then  # Check if sshd_config file h
             updating_comp
             installing_comp
             installing_docker_dc_comp
+            acme_ssl
             break
             ;;
          *)
@@ -97,4 +122,5 @@ else
    updating_comp
    installing_comp
    installing_docker_dc_comp
+   acme_ssl
 fi
