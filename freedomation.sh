@@ -44,12 +44,12 @@ acme_ssl() {
    read -p "Please enter your Email address to set acme.sh configuration: " email
    sleep 1
    sudo curl https://get.acme.sh | sh -s email="$email"
-   sudo source  ~/.bashrc
+   source  ~/.bashrc
    echo "Setting config..."
    sleep 2
-   sudo acme.sh --set-default-ca --server letsencrypt
-   sudo acme.sh --register-account -m "$email"
-   sudo acme.sh --upgrade --auto-upgrade
+   acme.sh --set-default-ca --server letsencrypt
+   acme.sh --register-account -m "$email"
+   acme.sh --upgrade --auto-upgrade
    sleep 1
    echo -e "SSL certificate has been added to server by acme.sh script.\n"
    sleep 1
