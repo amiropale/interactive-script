@@ -65,7 +65,39 @@ MIN_PORT=49152
 MAX_PORT=65535
 OLD_PORT="#Port 22"
 
-echo "Checking SSH port has been changed lately or not..."
+#=====================================START-HINT=========================================
+echo "---------------------------------------------------------------------------------"
+echo "------------------ Rahgozar/Freedom repo Automated Script 1 ---------------------"
+echo "This is the first interactive-script for running"
+echo "x-ui xray service on linux servers. BTW, 6 below"
+echo "sections are going to do the procedure. At last,"
+echo "your PC will reboot automatically and you have to"
+echo "run next script to continue procedure... : "
+echo -e "\n"
+echo -e "1- Checking OS if any changes have been made to SSH default port and set it done (Recommanded)."
+echo -e "\n"
+echo -e "2- Updating mirrors and installing some necessary utils."
+echo -e "\n"
+echo -e "3- Installing Docker and Docker-compose to running multiple services easily (You will prompt to jump this section if you have already installed Docker)."
+echo -e "\n"
+echo -e "4- Getting SSL Cert for server with acme.sh."
+echo -e "\n"
+echo -e "+++++++++++++OPTIONALS++++++++++++++"
+echo -e "\n"
+echo -e "Optional 1- Firewall configurations."
+echo -e "Optional 2- Server optimizations."
+echo "---------------------------------------------------------------------------------"
+#=========================================================================================
+
+read -rsn1 -p "Press any key to continue or ESC to exit..." key
+   if [[ $key == $'\x1b' ]]; then
+   echo -e "\nExiting..."
+   sleep 2
+   exit 0
+   fi
+
+sleep 1
+echo -e "\nChecking SSH port has been changed lately or not..."
 sleep 3
 if grep -q "$OLD_PORT" /etc/ssh/sshd_config; then  # Check if sshd_config file has been changed yet or not
    while true; do
