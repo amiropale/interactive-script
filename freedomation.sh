@@ -5,7 +5,7 @@ sshd_change_check() {
    MAX_PORT=65535
    current_port=$(grep -E "^Port" /etc/ssh/sshd_config | awk '{print $2}') # Get the current SSH port
    default_port=22
-   echo -e "Checking SSH port has been changed recently or not...\n"
+   echo -e "\nChecking SSH port has been changed recently or not...\n"
    sleep 3
    if [ "$current_port" -ne "$default_port" ]; then
       echo -e "SSH port has been changed from the default port. Preparing for updating server components...\n"
@@ -159,7 +159,7 @@ echo "--------------------------------------------------------------------------
 
 read -rsn1 -p "Press any key to continue or ESC to exit..." key
    if [[ $key == $'\x1b' ]]; then
-      echo -e "\nExiting..."
+      echo -e "\nExiting...\n"
       sleep 2
       exit 0
    else
