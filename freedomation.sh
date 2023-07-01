@@ -7,7 +7,7 @@ sshd_change_check() {
    default_port=22
    echo -e "\nChecking SSH port has been changed recently or not...\n"
    sleep 3
-   if [ "$current_port" -ne "$default_port" ]; then
+   if [[ "$current_port" -ne "$default_port" ]]; then
       echo -e "SSH port has been changed from the default port. Preparing for updating server components...\n"
       sleep 3
       updating_comp
