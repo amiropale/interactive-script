@@ -52,15 +52,15 @@ change_prompt() {
          *)
             echo -e "Invalid answer. Please input Y/y for changing port or N/n to avoid changing port now.\n"
             sleep 2
+            change_prompt
             ;;
       esac
    done
 }
 
 changing_port() {
-   old_port=22
-   current_port1=$(grep -E "^Port" /etc/ssh/sshd_config | awk '{print $2}') # Get the current SSH port
-   current_port2=$(grep -E "^#Port" /etc/ssh/sshd_config | awk '{print $2}') # Get the current SSH port
+   current_port1=$(grep "^Port" /etc/ssh/sshd_config) # Get the current SSH port
+   current_port2=$(grep "^#Port" /etc/ssh/sshd_config) # Get the current SSH port
    sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak # Create a backup
    if [ $? -eq 0 ]; then # Check if the backup was successful
       echo -e "Backup of SSHD Config created successfully.\n"
@@ -68,8 +68,8 @@ changing_port() {
       echo -e "Backup of SSHD Config creation failed.\n"
    fi
    sleep 2
-   sudo sed -i "s/$current_port1/Port $port/g" /etc/ssh/sshd_config
-   sudo sed -i "s/$current_port2/Port $port/g" /etc/ssh/sshd_config
+   sudo sed -i -E "s/$current_port1/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
+   sudo sed -i -E "s/$current_port2/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
    echo -e "Changing SSH port done. Reloading service...\n"
    sleep 2
    sudo systemctl reload sshd
