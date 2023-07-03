@@ -162,12 +162,13 @@ opt_1() {
          break
       else
          echo -e "Invalid answer. Please input Y/y for configuring UFW or N/n to avoid configuring now.\n"
+         opt_1
       fi
    done
 }
 
 opt_2() {
-   read -p "Do you want use Hybla instead of BBR method for TCP connections for even more speed? (Optional) [Y/n] " -res2
+   read -p "Do you want use Hybla instead of BBR method for TCP connections for even more speed? (Optional) [Y/n] " res2
    while true; do
       if [[ $res2 == y || $res2 == Y || $res2 == Yes || $res2 == YES || $res2 == yes ]]; then
          echo -e "Adding some changes to limits.conf ...\n"
@@ -210,6 +211,7 @@ opt_2() {
          break
       else
          echo -e "Invalid answer. Please input Y/y for optimizing server or N/n to avoid optimization now.\n"
+         opt_2
       fi
    done
 }
