@@ -136,6 +136,9 @@ acme_ssl() {
    sleep 10
    echo -e "\nRebooting machine..."
    sleep 1
+   mk_cron
+   status_file="/tmp/status_file.txt"
+   echo "$?" > "$status_file"
    sudo shutdown -r now
 }
 
@@ -216,37 +219,100 @@ opt_2() {
    done
 }
 
+mk_cron() {
+   current_script="$0"
+   cp "$current_script" "$current_script.copy"
+   copied_file="$current_script.copy"
+   crontab -l > mycron
+   echo "@reboot $copied_file" >> mycron
+   crontab mycron
+   rm mycron
+   rm $copied_file
+}
 
-#=====================================START-HINT=========================================
-echo "---------------------------------------------------------------------------------"
-echo "------------------ Rahgozar/Freedom repo Automated Script 1 ---------------------"
-echo "This is the first interactive-script for running"
-echo "x-ui xray service on linux servers. BTW, 6 below"
-echo "sections are going to do the procedure. At last,"
-echo "your PC will reboot automatically and you have to"
-echo "run next script to continue procedure... : "
-echo -e "\n"
-echo -e "1- Checking OS if any changes have been made to SSH default port and set it done (Recommanded)."
-echo -e "\n"
-echo -e "2- Updating mirrors and installing some necessary utils."
-echo -e "\n"
-echo -e "3- Installing Docker and Docker-compose to running multiple services easily (You will prompt to jump this section if you have already installed Docker)."
-echo -e "\n"
-echo -e "4- Getting SSL Cert for server with acme.sh."
-echo -e "\n"
-echo -e "+++++++++++++OPTIONALS++++++++++++++"
-echo -e "\n"
-echo -e "Optional 1- Firewall configurations."
-echo -e "Optional 2- Server optimizations."
-echo "---------------------------------------------------------------------------------"
-#=========================================================================================
+rm_cron() {
+   current_script="$0"
+   cp "$current_script" "$current_script.copy"
+   copied_file="$current_script.copy"
+   crontab -l > mycron
+   sed -i '/$copied_file/d' mycron
+   crontab mycron
+   rm mycron
+   rm $copied_file
+}
 
-read -rsn1 -p "Press any key to continue or ESC to exit..." key
-   if [[ $key == $'\x1b' ]]; then
-      echo -e "\nExiting...\n"
-      sleep 2
-      exit 0
+status_file() {
+   status_file=$(touch "/tmp/status_file.txt")
+   if [ -f "$status_file" ]; then
+      exit_status=$(cat "$status_file")
+      if [ "$exit_status" -eq 0 ]; then
+         rm /tmp/status_file.txt
+         install_nginx
+      else
+         echo -e "Error: Your procedure before reboot has been unsuccessfully and now you must start the script from the begining or contact author to help.\n"
+         sleep 3
+         rm /tmp/status_file.txt
+         begin_prompt
+      fi
    else
-      sleep 1
-      sshd_change_check
+      rm /tmp/status_file.txt
+      begin_prompt
    fi
+}
+
+# install_nginx() {
+
+# }
+
+begin_prompt() {
+   #=====================================START-HINT=========================================
+   echo ""
+   echo "--------------------------------------------------------------------------------"
+   echo "-------------------- Rahgozar/Freedom repo Automated Script --------------------"
+   echo "--------------------------------------------------------------------------------"
+   echo ""
+   echo "This is the an interactive-script for running x-ui xray service on a defined linux server. This script will run some utils and set few configs to proceed running x-ui. Script contains three main parts and you may encounter with REBOOTING machine during these parts that are listed below:"
+   echo -e "\n"
+   echo -e "1- Initializing Server for running Docker and other services with SSL Cert."
+   echo -e "\n"
+   echo -e "2- Running and configuring Nginx service to maintain ports and domains."
+   echo -e "\n"
+   echo -e "3- Installing x-ui service easily and automated and enjoy running it!"
+   echo -e "\n"
+   echo ""
+   echo "--------------------------------------------------------------------------------"
+   echo ""
+   echo "First part will have 6 below sections going to do the procedure. At last of this part, your PC will reboot automatically and after that script re-runs automatically to continue procedure..."
+   echo ""
+   echo -e "\n"
+   echo -e "1- Checking OS if any changes have been made to SSH default port and set it done (Recommanded)."
+   echo -e "\n"
+   echo -e "2- Updating mirrors and installing some necessary utils."
+   echo -e "\n"
+   echo -e "3- Installing Docker and Docker-compose to running multiple services easily (You will prompt to jump this section if you have already installed Docker)."
+   echo -e "\n"
+   echo -e "4- Getting SSL Cert for server with acme.sh."
+   echo -e "\n"
+   echo -e "+++++++++++++++| OPTIONALS |+++++++++++++++"
+   echo -e "\n"
+   echo -e "Optional 1- Firewall configurations."
+   echo -e "Optional 2- Server optimizations."
+   echo ""
+   echo "--------------------------------------------------------------------------------"
+   echo "--------------------------------------------------------------------------------"
+   echo ""
+   echo ""
+   #=========================================================================================
+
+   read -rsn1 -p "Press any key to continue or ESC to exit..." key
+      if [[ $key == $'\x1b' ]]; then
+         echo -e "\nExiting...\n"
+         sleep 2
+         exit 0
+      else
+         sleep 1
+         sshd_change_check
+      fi
+}
+
+status_file
