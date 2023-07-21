@@ -1,8 +1,9 @@
 #!/bin/bash
 
 sshd_change_check() {
+   echo ""
    echo -e "\nChecking SSH port has been changed recently or not...\n"
-   sleep 3
+   sleep 1
    if ! grep -q "^#Port" /etc/ssh/sshd_config && ! grep -q "^Port" /etc/ssh/sshd_config; then
       change_prompt   
    elif grep -q "^#Port" /etc/ssh/sshd_config && ! grep -q "^Port" /etc/ssh/sshd_config; then
@@ -11,7 +12,7 @@ sshd_change_check() {
       change_prompt
    else
       echo -e "SSH port has been changed from the default port. Preparing for updating server components...\n"
-      sleep 3
+      sleep 1
       updating_comp
       installing_comp
       opt_1
@@ -30,28 +31,28 @@ change_prompt() {
             read -p "Enter a port number for SSH (between $MIN_PORT and $MAX_PORT): " port 
             if [[ $port =~ ^[0-9]+$ ]] && ((port >= MIN_PORT))  &&  ((port <= MAX_PORT)); then # Check if the input is a valid port number within the range
                echo -e "Valid port number entered: $port. Preparing for change...\n"  
-               sleep 2
+               sleep 1
                changing_port
                updating_comp
                installing_comp
                opt_1
                break
             else 
-               echo -e "Invalid port number. Please try again with a valid port within the range.\n"
-               sleep 2
+               echo -e "\nInvalid port number. Please try again with a valid port within the range.\n"
+               sleep 1
             fi   
             ;;
          n|N|No|NO|no)
-            echo -e "Strongly recommanded change your SSH port customizably later! Preparing for updating server components...\n"
-            sleep 3
+            echo -e "\nStrongly recommanded change your SSH port customizably later! Preparing for updating server components...\n"
+            sleep 1
             updating_comp
             installing_comp
             opt_1
             break
             ;;
          *)
-            echo -e "Invalid answer. Please input Y/y for changing port or N/n to avoid changing port now.\n"
-            sleep 2
+            echo -e "\nInvalid answer. Please input Y/y for changing port or N/n to avoid changing port now.\n"
+            sleep 1
             change_prompt
             ;;
       esac
@@ -61,29 +62,32 @@ change_prompt() {
 changing_port() {
    current_port1=$(grep "^Port" /etc/ssh/sshd_config) # Get the current SSH port
    current_port2=$(grep "^#Port" /etc/ssh/sshd_config) # Get the current SSH port
+   echo -e "\nCreating SSHD backup file...\n"
    sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak # Create a backup
    if [ $? -eq 0 ]; then # Check if the backup was successful
       echo -e "Backup of SSHD Config created successfully.\n"
    else
       echo -e "Backup of SSHD Config creation failed.\n"
    fi
-   sleep 2
+   echo -e "\nNow wait for changing SSH port...\n"
+   sleep 1
    sudo sed -i -E "s/$current_port1/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
    sudo sed -i -E "s/$current_port2/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
-   echo -e "Changing SSH port done. Reloading service...\n"
-   sleep 2
+   echo -e "\nChanging SSH port done. Reloading service...\n"
+   sleep 1
    sudo systemctl reload sshd
-   sleep 2
-   echo -e "Everything done. Preparing for updating server components...\n"
-   sleep 3
+   sleep 1
+   echo -e "\nPreparing for updating server components...\n"
+   sleep 1
 }
 
 updating_comp() {
-   echo -e "\nPress Enter whenever prompted to perform default actions.\n"
-   sleep 5
+   echo -e "\nPress Enter whenever prompted to perform default actions."
+   echo -e "\nPlease Enter password for root if prompted to perform default actions.\n"
+   sleep 1
    sudo sh -c 'apt-get update; apt-get upgrade -y; apt-get dist-upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
    echo -e "\nUpdating components are finished. Preparing to install requirement utils...\n"
-   sleep 4
+   sleep 1
 }
 
 installing_comp() {
@@ -91,54 +95,63 @@ installing_comp() {
    sleep 1
    sudo apt-get install -y software-properties-common ufw wget curl git socat cron busybox bash-completion locales nano apt-utils
    echo -e "\nInstalling components are finished.\n"
-   sleep 4
+   sleep 1
 }
 
 installing_docker_dc_comp() {
    read -rsn1 -p "Now installing Docker and Docker-Compose for running services. Press any key to continue otherwise if you have had installed Docker and Docker-Compose press Esc to ignore this section..." key
    if [[ $key == $'\x1b' ]]; then
       echo -e "\nYou chose to ignoring this section and canceled the procedure of docker setup now.\nNow please wait for SSL gathering section to be load!"
-      sleep 5
+      sleep 1
       acme_ssl
+      exit_status=$?
+      echo "$exit_status" > /tmp/status_file.txt
+      reboot
    else
       echo -e "\nStarting to install docker-setup.sh, please wait..."
-      sleep 5
+      sleep 1
       sudo wget --quiet get.docker.com -O docker-setup.sh && sh docker-setup.sh
-      sleep 3
+      sleep 1
       echo -e "\nDocker has been installed successfully on server. Now preparing to install Docker-Compose...\n"
-      sleep 3
+      sleep 1
       LATEST_VERSION=$(curl --silent "https://api.github.com/repos/docker/compose/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
       sudo curl -L "https://github.com/docker/compose/releases/download/${LATEST_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       sudo chmod +x /usr/local/bin/docker-compose
-      sleep 2
+      sleep 1
       echo -e "\nDocker-Compose has been installed and configured successfully.\n"
-      sleep 4
+      sleep 1
+      acme_ssl
+      exit_status=$?
+      echo "$exit_status" > /tmp/status_file.txt
+      reboot
    fi
 }
 
 acme_ssl() {
    echo -e "\nGetting SSL license with acme.sh from letsencrypt corp...\n"
-   sleep 2
+   sleep 1
    read -p "Please enter your Email address to set acme.sh configuration: " email
    sleep 1
    sudo curl https://get.acme.sh | sh -s email="$email"
    source  ~/.bashrc
    echo -e "\nSetting config...\n"
-   sleep 2
-   acme.sh --set-default-ca --server letsencrypt
-   acme.sh --register-account -m "$email"
-   acme.sh --upgrade --auto-upgrade
+   sleep 1
+   acme.sh --set-default-ca --server letsencrypt 2&>/dev/null
+   acme.sh --register-account -m "$email" 2&>/dev/null
+   acme.sh --upgrade --auto-upgrade 2&>/dev/null
    sleep 1
    echo -e "SSL certificate has been added to server by acme.sh script.\n"
    sleep 1
-   echo -e "System needs to restart now. After 10 sec your PC shuts down and reboot.\nYou can run next script to install x-ui panel."
+   echo -e "System needs to restart now. After 10 sec your PC shuts down and reboot.\nAfter that the script will re-run automatically to install x-ui panel."
    echo -e "\nSleep 10s"
    sleep 10
    echo -e "\nRebooting machine..."
    sleep 1
-   mk_cron
-   status_file="/tmp/status_file.txt"
-   echo "$?" > "$status_file"
+   return 100
+}
+
+reboot() {
+   mk_service
    sudo shutdown -r now
 }
 
@@ -201,16 +214,15 @@ opt_2() {
          net.ipv4.tcp_mtu_probing = 1
          net.ipv4.tcp_congestion_control = hybla
          EOF'
+         sudo sed -i '$ d' /etc/ufw/sysctl.conf
          echo -e "Hybla method successfully replaced with BBR method.\n"
          sleep 1
          installing_docker_dc_comp
-         acme_ssl
          break
       elif [[ $res2 == n || $res2 == N || $res2 == No || $res2 == NO || $res2 == no ]]; then
          echo -e "You have chosen to pass this section. Now preparing to install Docker...\n"
          sleep 1
          installing_docker_dc_comp
-         acme_ssl
          break
       else
          echo -e "Invalid answer. Please input Y/y for optimizing server or N/n to avoid optimization now.\n"
@@ -219,50 +231,57 @@ opt_2() {
    done
 }
 
-mk_cron() {
-   current_script="$0"
-   cp "$current_script" "$current_script.copy"
-   copied_file="$current_script.copy"
-   crontab -l > mycron
-   echo "@reboot $copied_file" >> mycron
-   crontab mycron
-   rm mycron
-   rm $copied_file
+mk_service() {
+   script_dir=$(dirname "$(readlink -f "$0")")
+   sudo bash -c "cat << EOF >> /etc/systemd/system/freedomation.service
+   
+   [Unit]
+   Description=Reboot Service for Freedomation Interactive Script
+   After=network.target
+
+   [Service]
+   ExecStart=/bin/bash $script_dir/freedomation.sh
+
+   [Install]
+   WantedBy=multi-user.target
+   EOF"
+   sudo sed -i '$ d' /etc/systemd/system/freedomation.service
+   sudo systemctl daemon-reload
+   sudo systemctl enable freedomation.service
 }
 
-rm_cron() {
-   current_script="$0"
-   cp "$current_script" "$current_script.copy"
-   copied_file="$current_script.copy"
-   crontab -l > mycron
-   sed -i '/$copied_file/d' mycron
-   crontab mycron
-   rm mycron
-   rm $copied_file
+rm_service() {
+   echo -e "\nPlease enter root password for removing script auto reboot service...\n"
+   service_name="freedomation.service"
+   sudo systemctl stop $service_name
+   sudo systemctl disable $service_name
+   sudo rm /etc/systemd/system/$service_name
+   sudo systemctl daemon-reload
+   sudo systemctl reset-failed
 }
 
 status_file() {
-   status_file=$(touch "/tmp/status_file.txt")
+   status_file="/tmp/status_file.txt"
    if [ -f "$status_file" ]; then
       exit_status=$(cat "$status_file")
-      if [ "$exit_status" -eq 0 ]; then
+      if [ "$exit_status" -eq 100 ]; then
          rm /tmp/status_file.txt
          install_nginx
       else
          echo -e "Error: Your procedure before reboot has been unsuccessfully and now you must start the script from the begining or contact author to help.\n"
          sleep 3
          rm /tmp/status_file.txt
+         rm_service
          begin_prompt
       fi
    else
-      rm /tmp/status_file.txt
       begin_prompt
    fi
 }
 
-# install_nginx() {
-
-# }
+install_nginx() {
+   rm_service
+}
 
 begin_prompt() {
    #=====================================START-HINT=========================================
@@ -307,7 +326,7 @@ begin_prompt() {
    read -rsn1 -p "Press any key to continue or ESC to exit..." key
       if [[ $key == $'\x1b' ]]; then
          echo -e "\nExiting...\n"
-         sleep 2
+         sleep 1
          exit 0
       else
          sleep 1
