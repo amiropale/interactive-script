@@ -1,8 +1,12 @@
 #!/bin/bash
 
+echo -e "Setting up environment...\n"
+sleep 1
+export LE_WORKING_DIR="/root/.acme.sh"
+
 sshd_change_check() {
    echo ""
-   echo -e "\nChecking SSH port has been changed recently or not...\n"
+   echo -e "\n-----Checking SSH port has been changed recently or not...\n"
    sleep 1
    if ! grep -q "^#Port" /etc/ssh/sshd_config && ! grep -q "^Port" /etc/ssh/sshd_config; then
       change_prompt   
@@ -11,7 +15,7 @@ sshd_change_check() {
    elif [ "$(grep -E "^Port" /etc/ssh/sshd_config | awk '{print $2}')" == "22" ] && ! grep -q "^#Port" /etc/ssh/sshd_config; then
       change_prompt
    else
-      echo -e "SSH port has been changed from the default port. Preparing for updating server components...\n"
+      echo -e "-----SSH port has been changed from the default port. Preparing for updating server components...\n"
       sleep 1
       updating_comp
       installing_comp
@@ -22,15 +26,16 @@ sshd_change_check() {
 change_prompt() {
    MIN_PORT=49152
    MAX_PORT=65535
-   echo -e "SSH port is set to the default port.\n"
+   echo -e "-----SSH port is set to the default port.\n"
    sleep 1
-   read -p "Do you want to change SSH port at first? (Recommanded) [Y/n] " response # Prompt the user for a port number
+   read -p "+++++Do you want to change SSH port at first? (Recommanded) [Y/n] " response # Prompt the user for a port number
+   echo ""
    while true; do
       case "$response" in
          y|Y|Yes|YES|yes)
-            read -p "Enter a port number for SSH (between $MIN_PORT and $MAX_PORT): " port 
+            read -p "+++++Enter a port number for SSH (between $MIN_PORT and $MAX_PORT): " port 
             if [[ $port =~ ^[0-9]+$ ]] && ((port >= MIN_PORT))  &&  ((port <= MAX_PORT)); then # Check if the input is a valid port number within the range
-               echo -e "Valid port number entered: $port. Preparing for change...\n"  
+               echo -e "\n-----Valid port number entered: $port. Preparing for change...\n"  
                sleep 1
                changing_port
                updating_comp
@@ -38,12 +43,12 @@ change_prompt() {
                opt_1
                break
             else 
-               echo -e "\nInvalid port number. Please try again with a valid port within the range.\n"
+               echo -e "\n-----Invalid port number entered. Please try again with a valid port within the range.\n"
                sleep 1
             fi   
             ;;
          n|N|No|NO|no)
-            echo -e "\nStrongly recommanded change your SSH port customizably later! Preparing for updating server components...\n"
+            echo -e "\n-----Strongly recommanded change your SSH port customizably later! Preparing for updating server components...\n"
             sleep 1
             updating_comp
             installing_comp
@@ -51,7 +56,7 @@ change_prompt() {
             break
             ;;
          *)
-            echo -e "\nInvalid answer. Please input Y/y for changing port or N/n to avoid changing port now.\n"
+            echo -e "\n-----Invalid answer. Please input Y/y for changing port or N/n to avoid changing port now.\n"
             sleep 1
             change_prompt
             ;;
@@ -62,63 +67,63 @@ change_prompt() {
 changing_port() {
    current_port1=$(grep "^Port" /etc/ssh/sshd_config) # Get the current SSH port
    current_port2=$(grep "^#Port" /etc/ssh/sshd_config) # Get the current SSH port
-   echo -e "\nCreating SSHD backup file...\n"
+   echo -e "\n-----Creating SSHD backup file...\n"
    sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak # Create a backup
    if [ $? -eq 0 ]; then # Check if the backup was successful
-      echo -e "Backup of SSHD Config created successfully.\n"
+      echo -e "-----Backup of SSHD Config created successfully.\n"
    else
-      echo -e "Backup of SSHD Config creation failed.\n"
+      echo -e "-----Backup of SSHD Config creation failed.\n"
    fi
-   echo -e "\nNow wait for changing SSH port...\n"
+   echo -e "\n-----Now wait for changing SSH port...\n"
    sleep 1
    sudo sed -i -E "s/$current_port1/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
    sudo sed -i -E "s/$current_port2/Port $port/g" /etc/ssh/sshd_config 2&>/dev/null
-   echo -e "\nChanging SSH port done. Reloading service...\n"
+   echo -e "\n-----Changing SSH port done. Reloading service...\n"
    sleep 1
    sudo systemctl reload sshd
    sleep 1
-   echo -e "\nPreparing for updating server components...\n"
+   echo -e "\n-----Preparing for updating server components...\n"
    sleep 1
 }
 
 updating_comp() {
-   echo -e "\nPress Enter whenever prompted to perform default actions."
-   echo -e "\nPlease Enter password for root if prompted to perform default actions.\n"
+   echo -e "\n+++++Press Enter whenever prompted to perform default actions."
+   echo -e "+++++Please Enter password for root if prompted to perform default actions.\n"
    sleep 1
    sudo sh -c 'apt-get update; apt-get upgrade -y; apt-get dist-upgrade -y; apt-get autoremove -y; apt-get autoclean -y'
-   echo -e "\nUpdating components are finished. Preparing to install requirement utils...\n"
+   echo -e "\n-----Updating components are finished. Preparing to install requirement utils...\n"
    sleep 1
 }
 
 installing_comp() {
-   echo -e "\nGathering requirements to install...\n"
+   echo -e "\n-----Gathering requirements to install...\n"
    sleep 1
    sudo apt-get install -y software-properties-common ufw wget curl git socat cron busybox bash-completion locales nano apt-utils
-   echo -e "\nInstalling components are finished.\n"
+   echo -e "\n-----Installing components are finished.\n"
    sleep 1
 }
 
 installing_docker_dc_comp() {
-   read -rsn1 -p "Now installing Docker and Docker-Compose for running services. Press any key to continue otherwise if you have had installed Docker and Docker-Compose press Esc to ignore this section..." key
+   read -rsn1 -p "+++++Now installing Docker and Docker-Compose for running services. Press any key to continue otherwise if you have had installed Docker and Docker-Compose press Esc to ignore this section..." key
    if [[ $key == $'\x1b' ]]; then
-      echo -e "\nYou chose to ignoring this section and canceled the procedure of docker setup now.\nNow please wait for SSL gathering section to be load!"
+      echo -e "\n\n-----You chose to ignoring this section and canceled the procedure of docker setup now.\n\n-----Now please wait for SSL gathering section to be load!"
       sleep 1
       acme_ssl
       exit_status=$?
       echo "$exit_status" > /tmp/status_file.txt
       reboot
    else
-      echo -e "\nStarting to install docker-setup.sh, please wait..."
+      echo -e "\n\n-----Starting to install docker-setup.sh, please wait..."
       sleep 1
       sudo wget --quiet get.docker.com -O docker-setup.sh && sh docker-setup.sh
       sleep 1
-      echo -e "\nDocker has been installed successfully on server. Now preparing to install Docker-Compose...\n"
+      echo -e "\n\n-----Docker has been installed successfully on server. Now preparing to install Docker-Compose...\n"
       sleep 1
       LATEST_VERSION=$(curl --silent "https://api.github.com/repos/docker/compose/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
       sudo curl -L "https://github.com/docker/compose/releases/download/${LATEST_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       sudo chmod +x /usr/local/bin/docker-compose
       sleep 1
-      echo -e "\nDocker-Compose has been installed and configured successfully.\n"
+      echo -e "\n\n-----Docker-Compose has been installed and configured successfully.\n"
       sleep 1
       acme_ssl
       exit_status=$?
@@ -128,24 +133,26 @@ installing_docker_dc_comp() {
 }
 
 acme_ssl() {
-   echo -e "\nGetting SSL license with acme.sh from letsencrypt corp...\n"
+   echo -e "\n-----Getting SSL license with acme.sh from letsencrypt corp...\n"
    sleep 1
-   read -p "Please enter your Email address to set acme.sh configuration: " email
+   read -p "+++++Please enter your Email address to set acme.sh configuration: " email
    sleep 1
-   sudo curl https://get.acme.sh | sh -s email="$email"
-   source  ~/.bashrc
-   echo -e "\nSetting config...\n"
+   echo -e "\n-----Installing acme.sh script on your machine...\n"
+   sudo curl -o /root/acme.sh https://get.acme.sh
+   sudo chmod +x /root/acme.sh
+   sudo /root/acme.sh email="$email"
+   echo -e "\n-----Setting config...\n"
    sleep 1
-   acme.sh --set-default-ca --server letsencrypt 2&>/dev/null
-   acme.sh --register-account -m "$email" 2&>/dev/null
-   acme.sh --upgrade --auto-upgrade 2&>/dev/null
+   sudo /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+   sudo /root/.acme.sh/acme.sh --register-account -m "$email"
+   sudo /root/.acme.sh/acme.sh --upgrade --auto-upgrade
    sleep 1
-   echo -e "SSL certificate has been added to server by acme.sh script.\n"
+   echo -e "-----SSL certificate has been added to server by acme.sh script.\n"
    sleep 1
-   echo -e "System needs to restart now. After 10 sec your PC shuts down and reboot.\nAfter that the script will re-run automatically to install x-ui panel."
-   echo -e "\nSleep 10s"
+   echo -e "+++++System needs to restart now. After 10 sec your PC shuts down and reboot.\nAfter that the script will re-run automatically to install x-ui panel."
+   echo -e "\n+++++Sleep 10s"
    sleep 10
-   echo -e "\nRebooting machine..."
+   echo -e "\n-----Rebooting machine..."
    sleep 1
    return 100
 }
@@ -156,42 +163,42 @@ reboot() {
 }
 
 opt_1() {
-   read -p "Do you want to config UFW (Uncomplicated Firewall for linux) with a higher security to avoid all incoming connections? (Optional) [Y/n]" res1
+   read -p "+++++Do you want to config UFW (Uncomplicated Firewall for linux) with a higher security to avoid all incoming connections? (Optional) [Y/n]" res1
    while true; do
       if [[ $res1 == y || $res1 == Y || $res1 == Yes || $res1 == YES || $res1 == yes ]]; then
-         echo -e "\nDenying all incoming connections...\n"
+         echo -e "\n-----Denying all incoming connections...\n"
          sleep 1
          sudo ufw default deny incoming
-         echo -e "Allowing outgoing and limit SSH port given before...\n"
+         echo -e "-----Allowing outgoing and limit SSH port given before...\n"
          sleep 1
          sudo ufw default allow outgoing
          sudo ufw limit $port
          echo y | sudo ufw enable
-         echo -e "UFW successfully configured.\n"
+         echo -e "-----UFW successfully configured.\n"
          sleep 1
          opt_2
          break
       elif [[ $res1 == n || $res1 == N || $res1 == No || $res1 == NO || $res1 == no ]]; then
-         echo -e "You have chosen to pass this section. Now you will prompt for server optimizations...\n"
+         echo -e "\n-----You have chosen to pass this section. Now you will prompt for server optimizations...\n"
          sleep 1
          opt_2
          break
       else
-         echo -e "Invalid answer. Please input Y/y for configuring UFW or N/n to avoid configuring now.\n"
+         echo -e "\n-----Invalid answer. Please input Y/y for configuring UFW or N/n to avoid configuring now.\n"
          opt_1
       fi
    done
 }
 
 opt_2() {
-   read -p "Do you want use Hybla instead of BBR method for TCP connections for even more speed? (Optional) [Y/n] " res2
+   read -p "+++++Do you want use Hybla instead of BBR method for TCP connections for even more speed? (Optional) [Y/n] " res2
    while true; do
       if [[ $res2 == y || $res2 == Y || $res2 == Yes || $res2 == YES || $res2 == yes ]]; then
-         echo -e "Adding some changes to limits.conf ...\n"
+         echo -e "-----Adding some changes to limits.conf ...\n"
          sleep 1
          sudo bash -c 'echo "* soft nofile 51200" >> /etc/security/limits.conf && echo "* hard nofile 51200" >> /etc/security/limits.conf'
          ulimit -n 51200
-         echo -e "Adding Hybla instructions to UFW services...\n"
+         echo -e "-----Adding Hybla instructions to UFW services...\n"
          sleep 1
          sudo bash -c 'cat << EOF >> /etc/ufw/sysctl.conf
          fs.file-max = 51200
@@ -215,17 +222,17 @@ opt_2() {
          net.ipv4.tcp_congestion_control = hybla
          EOF'
          sudo sed -i '$ d' /etc/ufw/sysctl.conf
-         echo -e "Hybla method successfully replaced with BBR method.\n"
+         echo -e "-----Hybla method successfully replaced with BBR method.\n"
          sleep 1
          installing_docker_dc_comp
          break
       elif [[ $res2 == n || $res2 == N || $res2 == No || $res2 == NO || $res2 == no ]]; then
-         echo -e "You have chosen to pass this section. Now preparing to install Docker...\n"
+         echo -e "\n-----You have chosen to pass this section. Now preparing to install Docker...\n"
          sleep 1
          installing_docker_dc_comp
          break
       else
-         echo -e "Invalid answer. Please input Y/y for optimizing server or N/n to avoid optimization now.\n"
+         echo -e "\n-----Invalid answer. Please input Y/y for optimizing server or N/n to avoid optimization now.\n"
          opt_2
       fi
    done
@@ -323,9 +330,9 @@ begin_prompt() {
    echo ""
    #=========================================================================================
 
-   read -rsn1 -p "Press any key to continue or ESC to exit..." key
+   read -rsn1 -p "+++++Press any key to continue or ESC to exit..." key
       if [[ $key == $'\x1b' ]]; then
-         echo -e "\nExiting...\n"
+         echo -e "\n-----Exiting...\n"
          sleep 1
          exit 0
       else
